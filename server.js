@@ -31,11 +31,37 @@ async function createCourse() {
 }
 
 async function getCourses() {
+  const pageNumber = 2;
+  const pageSize = 10; // in real world we get these values from queries for api like /api/courses?pageNumber=2&pageSize=10
+
+  // eq (equal)
+  // ne(not equal)
+  // gt(greater than)
+  // gte (greate tahn or equal to)
+  // lt (less than)
+  // lte (less than or equal to)
+  // in
+  // nin (not in)
+  // or
+  // and
+
   const courses = await Course
-    .find({
-      isPublished: true
-    })
-    .limit(10)
+    // .find({
+    // price: {$gte: 10, $lte: 20}      // get courses that are between 10 and 20 dollars
+    // price: { $in: [10, 15, 20]}     // query courses that are either 10, 15, or 20 dollars
+    // })
+
+    // .find()
+    // .or([{
+    //   author: 'Jacob'
+    // }, {
+    //   isPublished: true
+    // }])   // used to find courses that has author be Jacob or is 
+
+    // .find({ author: /^Jacob/ })   // use regex to find certain properties
+
+    .skip((pageNumber - 1) * pageSize)
+    .limit(pageSize) // implement pagination to get the documents from any given page
     .sort({
       name: 1
     }) // can sort by certain property and 1 indicate ascending order. -1 for descending order
@@ -43,8 +69,64 @@ async function getCourses() {
       name: 1,
       tags: 1
     }) // select certain properties to be to be returned as result from query
+    .count() // return number of documents that match our filter
   console.log(courses);
 }
 
+async function updateCourseByQuery(id) {
+  // Approach: Query first
+  // findById()
+  // Modify its properties
+  // save()
+
+  // Approach: Update first
+  // Update directly
+  // Optionally: get the updated document
+
+  const course = await Course.findById(id);
+
+  if (!course) { // if there are no course with the given id, return immediately
+    return;
+  }
+
+  course.isPublished = true; // you can change properties by doing this way
+  course.author = 'Another Author';
+
+  course.set({ // or you can change multiple properties at once by using .set
+    isPublished: true,
+    author: 'Another Author'
+  })
+
+  const result = await course.save();
+  console.log(result);
+}
+
+async function updateCourseDirectly(id) {
+  const result = await Course.update({
+    _id: id
+  }, {
+    $set: {
+      author: 'Mosh',
+      isPublished: false
+    }
+  }); // first argument is a query object, second argument is an object of mongo update command and their values 
+  console.log(result);
+
+  const course = await Course.findByIdAndUpdate(id, {
+    $set: {
+      author: 'Mosh',
+      isPublished: false
+    }
+  }, {
+    new: true
+  }); // similar to .update but returns the original course that was found by the query, if set new: true, then returns the updated course instead
+}
+
+async function removeCourse(id) {
+  const result = await Course.deleteOne({
+    _id: id
+  });
+}
+
 // createCourse();
-getCourses();
+// getCourses();
