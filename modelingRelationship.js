@@ -30,3 +30,26 @@ let course = {
     name: 'Mosh'
   }
 }
+
+/////////////////////////////////////////////////
+
+const mongoose = require('mongoose');
+mongoose.connect('mongodb://localhost/playground') // returns a promise when we connect to mongodb database
+  .then(() => console.log('Connected to MongoDB...'))
+  .catch(err => console.error('Could not connect to MongoDB...', err));
+
+const Course = mongoose.model('Course', new mongoose.Schema({
+  name: String,
+  author: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Author' // references Author document, like foreign key that references primary key in relational db
+  }
+}))
+
+async function listCourses() {
+  const courses = await Course
+    .find()
+    .populate('author', 'name -_id') // target the author property to populate the id with the actual name of the author. Second argument is what properties you want to select from author. - means exclude
+    .select('name author');
+  console.log(courses);
+}
