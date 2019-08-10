@@ -6,28 +6,67 @@ mongoose.connect('mongodb://localhost/playground') // returns a promise when we 
   .catch(err => console.error('Could not connect to MongoDB...', err));
 
 const courseSchema = new mongoose.Schema({
-  name: String,
+  name: {
+    type: String,
+    required: true,
+    minlength: 5,
+    maxlength: 255
+  }, // make name property be required, similar to not null in relational . This validation is strictly from mongoose, not built in from mongoDB
+  category: {
+    type: String,
+    enum: ['web', 'mobile', 'network'],
+    required: true,
+    lowercase: true // automatically converts string to lowercase. there is also uppercase
+    //trim: true    This is for if there is padding around the string
+  }, // when we create a course, for the category property, it should be one of these value otherwise there will be error
   author: String,
-  tags: [String],
+  tags: {
+    type: Array,
+    validate: {
+      isAsync: true, // set true if request is async, then adds callback function to validator function
+      validator: function (value, callback) {
+        return value && value.length > 0; // checks if the array has at least one value and if in case of null and such since we initialize the value for this property as Array 
+      },
+      message: 'A course should have at least one tag' // show message when there is error
+    }
+  },
   date: {
     type: Date,
     default: Date.now
   },
-  isPublished: Boolean
+  isPublished: Boolean,
+  price: {
+    type: Number,
+    required: function () {
+      return this.isPublished;
+    }, // require price property when it is published
+    min: 10,
+    max: 200, // min and max for number validation
+    get: value => Math.round(value),
+    set: value => Math.round(value) // round the number when create a course and also when we query the course from database
+  }
 }) // schema types: String, Number, Date, Buffer, Boolean, ObjectID, Array
 
 const Course = mongoose.model('Course', courseSchema); // first argument: singular name of the collection, second argument: schema that defines the shape of this collection. Use Pascal case to name classes
 
 async function createCourse() {
-  const course = new Course({
-    name: '201d49',
-    author: 'John',
-    tags: ['html', 'css', 'javascript'],
-    isPublished: true
-  }) // relational database do not have ability to store array 
+  try {
+    const course = new Course({
+      name: '201d49',
+      category: 'web',
+      author: 'John',
+      tags: ['html', 'css', 'javascript'],
+      isPublished: true
+    }) // relational database do not have ability to store array 
 
-  const result = await course.save(); // async operations since it takes some time to access file system to save to database
-  console.log(result);
+    const result = await course.save(); // async operations since it takes some time to access file system to save to database
+    console.log(result);
+  } catch (error) {
+    console.log(error);
+    for (field in error.errors) {
+      console.log(field)
+    } // .errors holds the properties that are erroneous 
+  }
 }
 
 async function getCourses() {
