@@ -19,6 +19,6 @@
   },
   "homepage": "https://github.com/TheQuangNguyen/backend-practice#readme",
   "dependencies": {
-    "mongoose": "^5.6.9"
+    "mongoose": "^5.7.5"
   }
 }
